@@ -1,0 +1,5 @@
+node_modules
+dist
+.vite-lite-dev
+tsconfig.emit.json
+*.tsbuildinfo
