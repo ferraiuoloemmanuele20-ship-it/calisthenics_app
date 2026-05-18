@@ -23,6 +23,7 @@ export interface Exercise {
   instruction: string;
   videoUrl?: string;
   videoType?: VideoType;
+  videoSearchUrl?: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
   progressionGroup: string;
   order: number;

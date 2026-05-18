@@ -1,18 +1,10 @@
-import type { Category, Exercise, VideoType } from '../types';
+import type { Exercise } from '../types';
 
 export const equipmentLabels = {
   pullupBar: 'Pull-up bar',
   parallelBars: 'Parallel bars',
   rings: 'Rings',
 } as const;
-
-const demoVideos: Record<Category, { videoUrl: string; videoType: VideoType }> = {
-  Pull: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
-  Push: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
-  Shoulders: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
-  Core: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
-  Skill: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
-};
 
 const exercises: Exercise[] = [
   {
@@ -467,5 +459,10 @@ const exercises: Exercise[] = [
 
 export const exerciseLibrary: Exercise[] = exercises.map((exercise) => ({
   ...exercise,
-  ...demoVideos[exercise.category],
+  videoSearchUrl: createYouTubeSearchUrl(exercise.name),
 }));
+
+function createYouTubeSearchUrl(exerciseName: string) {
+  const query = `${exerciseName} proper form calisthenics`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query).replace(/%20/g, '+')}`;
+}

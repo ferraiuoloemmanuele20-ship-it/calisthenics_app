@@ -35,33 +35,56 @@ export function ExerciseCard({ exercise, index }: { exercise: WorkoutExercise; i
 }
 
 function ExerciseDemo({ exercise }: { exercise: WorkoutExercise }) {
-  const hasVideo = Boolean(exercise.videoUrl);
+  const [iframeFailed, setIframeFailed] = useState(false);
+  const canEmbedYouTube = Boolean(exercise.videoUrl) && exercise.videoType === 'youtube' && !iframeFailed;
+  const canEmbedExternal = Boolean(exercise.videoUrl) && exercise.videoType === 'external' && !iframeFailed;
+  const canShowLocal = Boolean(exercise.videoUrl) && exercise.videoType === 'local';
+  const showFallback = !canEmbedYouTube && !canEmbedExternal && !canShowLocal;
 
   return (
     <div className="space-y-3 rounded-3xl bg-slate-950 p-3 ring-1 ring-slate-800">
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-900">
-        {hasVideo && exercise.videoType === 'youtube' ? (
+        {canEmbedYouTube ? (
           <iframe
             className="absolute inset-0 h-full w-full"
             src={exercise.videoUrl}
             title={`${exercise.name} demo video`}
+            referrerPolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
+            onError={() => setIframeFailed(true)}
           />
         ) : null}
-        {hasVideo && exercise.videoType === 'external' ? (
-          <iframe className="absolute inset-0 h-full w-full" src={exercise.videoUrl} title={`${exercise.name} demo video`} />
+        {canEmbedExternal ? (
+          <iframe
+            className="absolute inset-0 h-full w-full"
+            src={exercise.videoUrl}
+            title={`${exercise.name} demo video`}
+            onError={() => setIframeFailed(true)}
+          />
         ) : null}
-        {hasVideo && exercise.videoType === 'local' ? (
-          <video className="absolute inset-0 h-full w-full" src={exercise.videoUrl} controls />
-        ) : null}
-        {!hasVideo ? (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm font-bold text-slate-400">
-            Demo video coming soon.
-          </div>
-        ) : null}
+        {canShowLocal ? <video className="absolute inset-0 h-full w-full" src={exercise.videoUrl} controls /> : null}
+        {showFallback ? <DemoFallback searchUrl={exercise.videoSearchUrl} /> : null}
       </div>
       <p className="px-1 text-xs font-semibold leading-5 text-slate-400">Watch the movement carefully before starting the set.</p>
+    </div>
+  );
+}
+
+function DemoFallback({ searchUrl }: { searchUrl?: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="text-sm font-bold text-slate-300">Demo video not embedded yet.</p>
+      {searchUrl ? (
+        <a
+          className="rounded-2xl bg-lime-400 px-4 py-3 text-sm font-black text-slate-950 shadow-lg shadow-lime-400/10"
+          href={searchUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open demo on YouTube
+        </a>
+      ) : null}
     </div>
   );
 }
