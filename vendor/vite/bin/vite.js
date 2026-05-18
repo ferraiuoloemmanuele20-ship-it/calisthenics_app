@@ -14,6 +14,7 @@ if (command === 'build') {
   rmSync(dist, { recursive: true, force: true });
   mkdirSync(dist, { recursive: true });
   cpSync(outDir, dist, { recursive: true });
+  if (existsSync(join(root, 'public'))) cpSync(join(root, 'public'), dist, { recursive: true });
   writeFileSync(join(dist, 'index.html'), html('/src/main.js'));
   if (existsSync(join(root, 'src/index.css'))) copyFileSync(join(root, 'src/index.css'), join(dist, 'src/index.css'));
   console.log('vite-lite build complete: dist');
@@ -46,6 +47,7 @@ function compile(target) {
   patchJs(target);
   cpSync(join(root, 'vendor/react'), join(target, 'vendor/react'), { recursive: true });
   cpSync(join(root, 'vendor/react-dom'), join(target, 'vendor/react-dom'), { recursive: true });
+  if (existsSync(join(root, 'public'))) cpSync(join(root, 'public'), target, { recursive: true });
 }
 
 function patchJs(dir) {
@@ -77,8 +79,17 @@ function html(entry) {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Calisthenics" />
+    <meta name="application-name" content="Calisthenics Progression Trainer" />
+    <meta name="description" content="Adaptive upper-body calisthenics workouts with local progression tracking." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="/icon.svg" />
     <title>Calisthenics Progression Trainer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/src/index.css" />

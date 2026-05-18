@@ -12,6 +12,7 @@ A mobile-first React + TypeScript app for adaptive upper-body calisthenics worko
 - Persistent completed workout history and progression state via `localStorage`.
 - Settings screen for changing equipment/level and resetting progress.
 - Mobile-first card and large-button interface using Tailwind-style utility classes.
+- Installable PWA metadata, mobile icons, and service worker support for iPhone and Android.
 
 ## Project structure
 
