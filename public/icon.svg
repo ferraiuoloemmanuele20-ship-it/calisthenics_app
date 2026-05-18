@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Calisthenics Progression Trainer icon</title>
+  <desc id="desc">Dark square app icon with a white pull-up bar and CT letters.</desc>
+  <rect width="512" height="512" rx="112" fill="#020617"/>
+  <circle cx="256" cy="256" r="190" fill="#0f172a" stroke="#bef264" stroke-width="18"/>
+  <path d="M132 150h248M176 150v108M336 150v108" fill="none" stroke="#f8fafc" stroke-width="28" stroke-linecap="round"/>
+  <text x="256" y="350" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="132" font-weight="900" fill="#f8fafc" letter-spacing="-10">CT</text>
+  <path d="M176 392h160" stroke="#bef264" stroke-width="18" stroke-linecap="round"/>
+</svg>
