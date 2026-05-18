@@ -6,6 +6,7 @@ import { extname, join } from 'node:path';
 
 const command = process.argv[2] || 'dev';
 const root = process.cwd();
+const base = '/calisthenics_app/';
 const outDir = join(root, '.vite-lite-dev');
 
 if (command === 'build') {
@@ -15,7 +16,7 @@ if (command === 'build') {
   mkdirSync(dist, { recursive: true });
   cpSync(outDir, dist, { recursive: true });
   if (existsSync(join(root, 'public'))) cpSync(join(root, 'public'), dist, { recursive: true });
-  writeFileSync(join(dist, 'index.html'), html('/src/main.js'));
+  writeFileSync(join(dist, 'index.html'), html(`${base}src/main.js`));
   if (existsSync(join(root, 'src/index.css'))) copyFileSync(join(root, 'src/index.css'), join(dist, 'src/index.css'));
   console.log('vite-lite build complete: dist');
   process.exit(0);
@@ -26,9 +27,10 @@ const hostIndex = process.argv.includes('--host') ? process.argv[process.argv.in
 const port = Number(process.env.PORT || 5173);
 createServer((req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
-  if (url.pathname === '/' || url.pathname === '/index.html') return send(res, html('/src/main.js'), 'text/html');
-  if (url.pathname === '/src/index.css') return sendFile(res, join(root, 'src/index.css'));
-  const file = join(outDir, decodeURIComponent(url.pathname));
+  if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === base || url.pathname === `${base}index.html`) return send(res, html(`${base}src/main.js`), 'text/html');
+  if (url.pathname === '/src/index.css' || url.pathname === `${base}src/index.css`) return sendFile(res, join(root, 'src/index.css'));
+  const relativePath = url.pathname.startsWith(base) ? url.pathname.slice(base.length - 1) : url.pathname;
+  const file = join(outDir, decodeURIComponent(relativePath));
   if (existsSync(file)) return sendFile(res, file);
   res.writeHead(404);
   res.end('Not found');
@@ -56,6 +58,7 @@ function patchJs(dir) {
     const file = join(dir, name);
     let code = readFileSync(file, 'utf8');
     code = code.replace(/import\s+['"]\.\/index\.css['"];?\n?/g, '');
+    code = code.replace(/import\.meta\.env\.BASE_URL/g, JSON.stringify(base));
     code = code.replace(/(from\s+['"])(\.{1,2}\/[^'"]+?)(['"])/g, (_m, start, spec, end) => {
       if (/\.(js|css|json)$/.test(spec)) return `${start}${spec}${end}`;
       return `${start}${spec}.js${end}`;
@@ -87,18 +90,18 @@ function html(entry) {
     <meta name="apple-mobile-web-app-title" content="Calisthenics" />
     <meta name="application-name" content="Calisthenics Progression Trainer" />
     <meta name="description" content="Adaptive upper-body calisthenics workouts with local progression tracking." />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icon.svg" />
-    <link rel="icon" type="image/svg+xml" sizes="any" href="/icon.svg" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="icon.svg" />
     <title>Calisthenics Progression Trainer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/src/index.css" />
+    <link rel="stylesheet" href="${base}src/index.css" />
     <script type="importmap">
       {
         "imports": {
-          "react": "/vendor/react/index.js",
-          "react/jsx-runtime": "/vendor/react/jsx-runtime.js",
-          "react-dom/client": "/vendor/react-dom/client.js"
+          "react": "${base}vendor/react/index.js",
+          "react/jsx-runtime": "${base}vendor/react/jsx-runtime.js",
+          "react-dom/client": "${base}vendor/react-dom/client.js"
         }
       }
     </script>

@@ -1,5 +1,5 @@
 const CACHE_NAME = 'calisthenics-trainer-v1';
-const APP_SHELL = ['/', '/manifest.webmanifest'];
+const APP_SHELL = ['./', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -28,7 +28,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
           return response;
         })
-        .catch(() => caches.match('/'));
+        .catch(() => caches.match('./'));
     }),
   );
 });

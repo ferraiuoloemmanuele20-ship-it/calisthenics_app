@@ -2,8 +2,8 @@
   "name": "Calisthenics Progression Trainer",
   "short_name": "Calisthenics",
   "description": "Adaptive upper-body calisthenics workouts with local progression tracking.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0f172a",
@@ -11,7 +11,7 @@
   "categories": ["fitness", "health", "sports"],
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
