@@ -2,6 +2,7 @@ export type Equipment = 'pullupBar' | 'parallelBars' | 'rings';
 export type Level = 'Base' | 'Intermediate' | 'Advanced';
 export type Category = 'Pull' | 'Push' | 'Shoulders' | 'Core' | 'Skill';
 export type Feedback = 'Easy' | 'Good' | 'Hard';
+export type VideoType = 'youtube' | 'external' | 'local';
 
 export interface UserSettings {
   equipment: Equipment[];
@@ -20,6 +21,8 @@ export interface Exercise {
   seconds?: number;
   restSeconds: number;
   instruction: string;
+  videoUrl?: string;
+  videoType?: VideoType;
   difficulty: 1 | 2 | 3 | 4 | 5;
   progressionGroup: string;
   order: number;

@@ -1,4 +1,4 @@
-import type { Exercise } from '../types';
+import type { Category, Exercise, VideoType } from '../types';
 
 export const equipmentLabels = {
   pullupBar: 'Pull-up bar',
@@ -6,7 +6,15 @@ export const equipmentLabels = {
   rings: 'Rings',
 } as const;
 
-export const exerciseLibrary: Exercise[] = [
+const demoVideos: Record<Category, { videoUrl: string; videoType: VideoType }> = {
+  Pull: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
+  Push: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
+  Shoulders: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
+  Core: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
+  Skill: { videoUrl: 'https://www.youtube-nocookie.com/embed/ysz5S6PUM-U', videoType: 'youtube' },
+};
+
+const exercises: Exercise[] = [
   {
     id: 'assisted-pull-up',
     name: 'Assisted pull up',
@@ -456,3 +464,8 @@ export const exerciseLibrary: Exercise[] = [
     order: 3,
   },
 ];
+
+export const exerciseLibrary: Exercise[] = exercises.map((exercise) => ({
+  ...exercise,
+  ...demoVideos[exercise.category],
+}));
