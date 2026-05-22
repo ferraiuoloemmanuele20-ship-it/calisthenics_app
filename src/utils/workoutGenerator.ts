@@ -3,29 +3,23 @@ import type { Category, Equipment, Level, ProgressionMap, Workout, WorkoutExerci
 import { applyProgression } from './progressionEngine';
 
 const levelRank: Record<Level, number> = { Base: 1, Intermediate: 2, Advanced: 3 };
-const workoutShape: Record<Level, Category[]> = {
-  Base: ['Pull', 'Push', 'Shoulders', 'Core'],
-  Intermediate: ['Pull', 'Push', 'Shoulders', 'Core', 'Skill'],
-  Advanced: ['Pull', 'Push', 'Shoulders', 'Core', 'Skill'],
-};
 
-const targetExerciseCount: Record<Level, number> = { Base: 4, Intermediate: 5, Advanced: 5 };
+const requiredCategories: Category[] = ['Pull', 'Push', 'Shoulders', 'Core', 'Skill'];
+const targetExerciseCount: Record<Level, number> = { Base: 7, Intermediate: 7, Advanced: 8 };
 
 export function generateWorkout(equipment: Equipment[], level: Level, progression: ProgressionMap): Workout {
-  const categories = workoutShape[level];
-  const exercises = categories
-    .map((category) => chooseExercise(category, level, equipment, progression))
-    .filter((exercise): exercise is WorkoutExercise => Boolean(exercise));
+  const exercises: WorkoutExercise[] = [];
 
+  requiredCategories.forEach((category) => {
+    const selected = chooseExercise(category, level, equipment, progression, exercises.map((item) => item.id));
+    if (selected) exercises.push(selected);
+  });
+
+  const accessoryPriority: Category[] = ['Pull', 'Push', 'Core', 'Shoulders', 'Skill'];
   while (exercises.length < targetExerciseCount[level]) {
-    const bonus = chooseBonusExercise(level, equipment, progression, exercises.map((item) => item.id));
+    const bonus = chooseFromPriority(accessoryPriority, level, equipment, progression, exercises.map((item) => item.id));
     if (!bonus) break;
     exercises.push(bonus);
-  }
-
-  if (level === 'Advanced' && equipment.includes('rings') && exercises.length < 6) {
-    const bonus = chooseExercise('Push', 'Advanced', equipment, progression, exercises.map((item) => item.id));
-    if (bonus) exercises.push(bonus);
   }
 
   return {
@@ -35,6 +29,20 @@ export function generateWorkout(equipment: Equipment[], level: Level, progressio
     equipment,
     exercises,
   };
+}
+
+function chooseFromPriority(
+  priorities: Category[],
+  level: Level,
+  equipment: Equipment[],
+  progression: ProgressionMap,
+  excludedIds: string[],
+) {
+  for (const category of priorities) {
+    const candidate = chooseExercise(category, level, equipment, progression, excludedIds);
+    if (candidate) return candidate;
+  }
+  return undefined;
 }
 
 function chooseExercise(
@@ -74,20 +82,13 @@ function normalizeForLevel(exercise: WorkoutExercise, level: Level): WorkoutExer
   };
 }
 
-function chooseBonusExercise(level: Level, equipment: Equipment[], progression: ProgressionMap, excludedIds: string[]) {
-  const bonusPriority: Category[] = ['Push', 'Pull', 'Core', 'Shoulders', 'Skill'];
-  for (const category of bonusPriority) {
-    const bonus = chooseExercise(category, level, equipment, progression, excludedIds);
-    if (bonus) return bonus;
-  }
-  return undefined;
-}
-
 function fallbackBodyweight(category: Category, level: Level, excludedIds: string[]) {
   const fallbackIdByCategory: Partial<Record<Category, string>> = {
-    Push: level === 'Base' ? 'push-up' : 'decline-push-up',
+    Pull: 'scapular-pull-up',
+    Push: level === 'Base' ? 'incline-push-up' : 'decline-push-up',
     Shoulders: level === 'Advanced' ? 'wall-handstand-hold' : 'pike-push-up',
     Core: 'hollow-body-hold',
+    Skill: 'hollow-body-hold',
   };
   return exerciseLibrary.find((exercise) => exercise.id === fallbackIdByCategory[category] && !excludedIds.includes(exercise.id));
 }

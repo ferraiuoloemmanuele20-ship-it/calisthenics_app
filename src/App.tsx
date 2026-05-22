@@ -9,7 +9,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { WorkoutGeneratorScreen } from './screens/WorkoutGeneratorScreen';
 import type { CompletedWorkout, Feedback, Screen, UserSettings, Workout } from './types';
 import { updateProgressionAfterWorkout } from './utils/progressionEngine';
-import { loadState, resetAllProgress, saveHistory, saveProgression, saveSettings } from './utils/storage';
+import { loadPreviousState, loadState, resetAllProgress, saveHistory, savePreviousState, saveProgression, saveSettings } from './utils/storage';
 
 function App() {
   const initialState = useMemo(() => loadState(), []);
@@ -32,17 +32,44 @@ function App() {
 
   const handleFeedback = (feedback: Feedback) => {
     if (!activeWorkout) return;
+
+    const previousSnapshot = {
+      history,
+      progression,
+      savedAt: new Date().toISOString(),
+    };
+
     const completed: CompletedWorkout = {
       ...activeWorkout,
       feedback,
       completedAt: new Date().toISOString(),
     };
-    const nextHistory = [completed, ...history];
-    const nextProgression = updateProgressionAfterWorkout(progression, completed);
-    setHistory(nextHistory);
-    setProgression(nextProgression);
-    saveHistory(nextHistory);
-    saveProgression(nextProgression);
+
+    if (feedback === 'Hard') {
+      const storedPrevious = loadPreviousState();
+      if (storedPrevious) {
+        setHistory(storedPrevious.history);
+        setProgression(storedPrevious.progression);
+        saveHistory(storedPrevious.history);
+        saveProgression(storedPrevious.progression);
+      } else {
+        const nextHistory = [completed, ...history];
+        const nextProgression = updateProgressionAfterWorkout(progression, completed);
+        setHistory(nextHistory);
+        setProgression(nextProgression);
+        saveHistory(nextHistory);
+        saveProgression(nextProgression);
+      }
+    } else {
+      savePreviousState(previousSnapshot);
+      const nextHistory = [completed, ...history];
+      const nextProgression = updateProgressionAfterWorkout(progression, completed);
+      setHistory(nextHistory);
+      setProgression(nextProgression);
+      saveHistory(nextHistory);
+      saveProgression(nextProgression);
+    }
+
     setActiveWorkout(null);
     setScreen('history');
   };

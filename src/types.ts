@@ -55,6 +55,9 @@ export interface ExerciseProgress {
   currentRepsAdjustment: number;
   currentSecondsAdjustment: number;
   unlockedExerciseId?: string;
+  previousUnlockedExerciseId?: string;
+  previousRepsAdjustment?: number;
+  previousSecondsAdjustment?: number;
   lastFeedback?: Feedback;
   updatedAt: string;
 }

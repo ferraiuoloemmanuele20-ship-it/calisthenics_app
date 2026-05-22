@@ -9,7 +9,7 @@ const options: Feedback[] = ['Easy', 'Good', 'Hard'];
 export function FeedbackScreen({ onSubmit }: { onSubmit: (feedback: Feedback) => void }) {
   return (
     <div className="space-y-6">
-      <Header title="How did it feel?" subtitle="Your answer updates local progression cautiously for the next generated workout." />
+      <Header title="How did it feel?" subtitle="Easy = next workout becomes harder • Good = next workout stays the same • Hard = next workout becomes easier or returns to previous version." />
       <div className="space-y-4">
         {options.map((option) => (
           <Card key={option} className="space-y-3">
