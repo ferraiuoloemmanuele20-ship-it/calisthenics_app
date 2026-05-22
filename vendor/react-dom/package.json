@@ -1,0 +1,13 @@
+{
+  "name": "react-dom",
+  "version": "19.1.0-local",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "dependencies": {
+    "react": "file:../react"
+  }
+}
