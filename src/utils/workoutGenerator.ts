@@ -83,7 +83,6 @@ function normalizeForLevel(exercise: WorkoutExercise, level: Level): WorkoutExer
   const setDefaults: Record<Level, number> = { Base: 3, Intermediate: 4, Advanced: 4 };
   return {
     ...exercise,
-    workoutItemId: exercise.id,
     sets: Math.max(exercise.sets, setDefaults[level]),
   };
 }
