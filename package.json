@@ -6,14 +6,27 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "react": "file:vendor/react",
-    "react-dom": "file:vendor/react-dom"
+    "react": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "vite": "file:vendor/vite",
-    "@vitejs/plugin-react": "file:vendor/@vitejs/plugin-react"
+    "@eslint/js": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest",
+    "globals": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "vite": "latest"
   }
 }
