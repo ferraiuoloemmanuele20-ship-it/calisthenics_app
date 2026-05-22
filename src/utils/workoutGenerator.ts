@@ -1,25 +1,31 @@
 import { exerciseLibrary } from '../data/exerciseLibrary';
-import type { Category, Equipment, Level, ProgressionMap, Workout, WorkoutExercise } from '../types';
+import type { Equipment, Level, ProgressionMap, Workout, WorkoutExercise } from '../types';
 import { applyProgression } from './progressionEngine';
 
-const levelRank: Record<Level, number> = { Base: 1, Intermediate: 2, Advanced: 3 };
+type WorkoutSlot = 'Pull' | 'Push' | 'Dip' | 'Skill1' | 'Skill2' | 'Handstand' | 'Core';
 
-const requiredCategories: Category[] = ['Pull', 'Push', 'Shoulders', 'Core', 'Skill'];
-const targetExerciseCount: Record<Level, number> = { Base: 7, Intermediate: 7, Advanced: 8 };
+const levelRank: Record<Level, number> = { Base: 1, Intermediate: 2, Advanced: 3 };
+const workoutSlots: WorkoutSlot[] = ['Pull', 'Push', 'Dip', 'Skill1', 'Skill2', 'Handstand', 'Core'];
 
 export function generateWorkout(equipment: Equipment[], level: Level, progression: ProgressionMap): Workout {
-  const exercises: WorkoutExercise[] = [];
+  const selected: WorkoutExercise[] = [];
+  const usedIds = new Set<string>();
+  const usedGroups = new Set<string>();
 
-  requiredCategories.forEach((category) => {
-    const selected = chooseExercise(category, level, equipment, progression, exercises.map((item) => item.id));
-    if (selected) exercises.push(selected);
+  workoutSlots.forEach((slot) => {
+    const exercise = chooseForSlot(slot, level, equipment, progression, selected, usedIds, usedGroups);
+    if (!exercise) return;
+    selected.push(exercise);
+    usedIds.add(exercise.id);
+    usedGroups.add(exercise.progressionGroup);
   });
 
-  const accessoryPriority: Category[] = ['Pull', 'Push', 'Core', 'Shoulders', 'Skill'];
-  while (exercises.length < targetExerciseCount[level]) {
-    const bonus = chooseFromPriority(accessoryPriority, level, equipment, progression, exercises.map((item) => item.id));
-    if (!bonus) break;
-    exercises.push(bonus);
+  // Final safety pass: ensure exactly 7 unique items.
+  while (selected.length < workoutSlots.length) {
+    const fallback = chooseUniversalFallback(level, equipment, progression, usedIds);
+    if (!fallback) break;
+    selected.push(fallback);
+    usedIds.add(fallback.id);
   }
 
   return {
@@ -27,40 +33,108 @@ export function generateWorkout(equipment: Equipment[], level: Level, progressio
     createdAt: new Date().toISOString(),
     level,
     equipment,
-    exercises,
+    exercises: selected.slice(0, workoutSlots.length),
   };
 }
 
-function chooseFromPriority(
-  priorities: Category[],
+function chooseForSlot(
+  slot: WorkoutSlot,
   level: Level,
   equipment: Equipment[],
   progression: ProgressionMap,
-  excludedIds: string[],
-) {
-  for (const category of priorities) {
-    const candidate = chooseExercise(category, level, equipment, progression, excludedIds);
-    if (candidate) return candidate;
-  }
-  return undefined;
+  selected: WorkoutExercise[],
+  usedIds: Set<string>,
+  usedGroups: Set<string>,
+): WorkoutExercise | undefined {
+  const strict = pickCandidate(slot, level, equipment, progression, selected, usedIds, usedGroups, true);
+  if (strict) return strict;
+  return pickCandidate(slot, level, equipment, progression, selected, usedIds, usedGroups, false);
 }
 
-function chooseExercise(
-  category: Category,
+function pickCandidate(
+  slot: WorkoutSlot,
   level: Level,
   equipment: Equipment[],
   progression: ProgressionMap,
-  excludedIds: string[] = [],
+  selected: WorkoutExercise[],
+  usedIds: Set<string>,
+  usedGroups: Set<string>,
+  avoidDuplicateGroups: boolean,
 ): WorkoutExercise | undefined {
   const candidates = exerciseLibrary
-    .filter((exercise) => exercise.category === category)
-    .filter((exercise) => !excludedIds.includes(exercise.id))
     .filter((exercise) => levelRank[exercise.level] <= levelRank[level])
     .filter((exercise) => hasRequiredEquipment(exercise.equipment, equipment))
+    .filter((exercise) => !usedIds.has(exercise.id))
+    .filter((exercise) => matchSlot(slot, exercise, selected, equipment))
+    .filter((exercise) => (avoidDuplicateGroups ? !usedGroups.has(exercise.progressionGroup) : true))
     .sort((a, b) => scoreCandidate(b, level, equipment, progression) - scoreCandidate(a, level, equipment, progression));
 
-  const selected = candidates[0] ?? fallbackBodyweight(category, level, excludedIds);
-  return selected ? normalizeForLevel(applyProgression(selected, progression), level) : undefined;
+  const chosen = candidates[0] ?? slotFallback(slot, level, equipment, progression, usedIds);
+  return chosen ? normalizeForLevel(applyProgression(chosen, progression), level) : undefined;
+}
+
+function matchSlot(
+  slot: WorkoutSlot,
+  exercise: WorkoutExercise,
+  selected: WorkoutExercise[],
+  equipment: Equipment[],
+): boolean {
+  const name = exercise.name.toLowerCase();
+  const group = exercise.progressionGroup;
+
+  if (slot === 'Pull') {
+    return exercise.category === 'Pull';
+  }
+
+  if (slot === 'Push') {
+    return (
+      exercise.category === 'Push'
+      && !group.includes('dip')
+      && !name.includes('support')
+    );
+  }
+
+  if (slot === 'Dip') {
+    const dipAllowed = equipment.includes('parallelBars') || equipment.includes('rings') || equipment.includes('pullupBar');
+    if (dipAllowed) {
+      return exercise.category === 'Push' && (group.includes('dip') || name.includes('support'));
+    }
+
+    const mainPush = selected.find((item) => item.category === 'Push' && !item.progressionGroup.includes('dip'));
+    return exercise.category === 'Push' && mainPush ? exercise.progressionGroup !== mainPush.progressionGroup : exercise.category === 'Push';
+  }
+
+  if (slot === 'Skill1') {
+    return exercise.category === 'Skill' && (group.includes('front-lever') || name.includes('scapular pull-up') || name.includes('hollow'));
+  }
+
+  if (slot === 'Skill2') {
+    const skill1 = selected.find((item) => item.category === 'Skill');
+    return exercise.category === 'Skill'
+      && (!skill1 || exercise.progressionGroup !== skill1.progressionGroup)
+      && (
+        group.includes('back-lever')
+        || group.includes('l-sit')
+        || name.includes('german hang')
+        || name.includes('skin the cat')
+        || name.includes('support')
+      );
+  }
+
+  if (slot === 'Handstand') {
+    return (
+      exercise.category === 'Shoulders'
+      || name.includes('handstand')
+      || name.includes('pike push')
+      || name.includes('wall')
+    );
+  }
+
+  if (slot === 'Core') {
+    return exercise.category === 'Core' && !selected.some((item) => item.id === exercise.id);
+  }
+
+  return false;
 }
 
 function hasRequiredEquipment(required: Equipment[], available: Equipment[]) {
@@ -68,7 +142,7 @@ function hasRequiredEquipment(required: Equipment[], available: Equipment[]) {
 }
 
 function scoreCandidate(exercise: WorkoutExercise, level: Level, equipment: Equipment[], progression: ProgressionMap) {
-  const levelMatch = exercise.level === level ? 8 : 0;
+  const levelMatch = exercise.level === level ? 10 : 0;
   const equipmentMatch = exercise.equipment.some((item) => equipment.includes(item)) ? 3 : 0;
   const progressMatch = progression[exercise.progressionGroup]?.unlockedExerciseId === exercise.id ? 12 : 0;
   return exercise.order + levelMatch + equipmentMatch + progressMatch;
@@ -82,13 +156,37 @@ function normalizeForLevel(exercise: WorkoutExercise, level: Level): WorkoutExer
   };
 }
 
-function fallbackBodyweight(category: Category, level: Level, excludedIds: string[]) {
-  const fallbackIdByCategory: Partial<Record<Category, string>> = {
-    Pull: 'scapular-pull-up',
-    Push: level === 'Base' ? 'incline-push-up' : 'decline-push-up',
-    Shoulders: level === 'Advanced' ? 'wall-handstand-hold' : 'pike-push-up',
-    Core: 'hollow-body-hold',
-    Skill: 'hollow-body-hold',
+function slotFallback(
+  slot: WorkoutSlot,
+  level: Level,
+  equipment: Equipment[],
+  progression: ProgressionMap,
+  usedIds: Set<string>,
+) {
+  const fallbackIds: Record<WorkoutSlot, string[]> = {
+    Pull: ['australian-row', 'ring-row', 'negative-pull-up'],
+    Push: ['incline-push-up', 'push-up', 'decline-push-up'],
+    Dip: ['support-hold-bars', 'support-hold-rings', 'parallel-bar-dip', 'push-up'],
+    Skill1: ['scapular-pull-up', 'tuck-front-lever-hold', 'hollow-body-hold'],
+    Skill2: ['german-hang-progression', 'skin-the-cat-progression', 'tuck-l-sit-bars'],
+    Handstand: ['pike-push-up', 'elevated-pike-push-up', 'wall-handstand-hold'],
+    Core: ['hollow-body-hold', 'hanging-knee-raise', 'ring-hanging-knee-raise'],
   };
-  return exerciseLibrary.find((exercise) => exercise.id === fallbackIdByCategory[category] && !excludedIds.includes(exercise.id));
+
+  const match = fallbackIds[slot]
+    .map((id) => exerciseLibrary.find((exercise) => exercise.id === id))
+    .filter((exercise): exercise is WorkoutExercise => Boolean(exercise))
+    .find((exercise) => levelRank[exercise.level] <= levelRank[level] && hasRequiredEquipment(exercise.equipment, equipment) && !usedIds.has(exercise.id));
+
+  return match ? normalizeForLevel(applyProgression(match, progression), level) : undefined;
+}
+
+function chooseUniversalFallback(level: Level, equipment: Equipment[], progression: ProgressionMap, usedIds: Set<string>) {
+  const fallback = exerciseLibrary
+    .filter((exercise) => levelRank[exercise.level] <= levelRank[level])
+    .filter((exercise) => hasRequiredEquipment(exercise.equipment, equipment))
+    .filter((exercise) => !usedIds.has(exercise.id))
+    .sort((a, b) => a.difficulty - b.difficulty)[0];
+
+  return fallback ? normalizeForLevel(applyProgression(fallback, progression), level) : undefined;
 }
