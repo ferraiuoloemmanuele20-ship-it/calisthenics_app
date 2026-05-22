@@ -30,6 +30,7 @@ export interface Exercise {
 }
 
 export interface WorkoutExercise extends Exercise {
+  workoutItemId?: string;
   targetReps?: number;
   targetSeconds?: number;
 }

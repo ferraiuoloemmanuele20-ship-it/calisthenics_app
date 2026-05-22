@@ -19,14 +19,24 @@ export function ActiveWorkoutScreen({ workout, onFinish }: { workout: Workout; o
         <div className="mt-3 h-3 rounded-full bg-slate-800"><div className="h-3 rounded-full bg-lime-400 transition-all" style={{ width: `${percent}%` }} /></div>
       </div>
       <div className="space-y-4">
-        {workout.exercises.map((exercise, index) => (
-          <div key={exercise.id} className={completed.includes(exercise.id) ? 'opacity-60' : ''}>
-            <ExerciseCard exercise={exercise} index={index + 1} />
-            <Button full variant={completed.includes(exercise.id) ? 'secondary' : 'primary'} className="mt-3" onClick={() => toggle(exercise.id)}>
-              {completed.includes(exercise.id) ? 'Completed ✓' : 'Mark complete'}
-            </Button>
-          </div>
-        ))}
+        {workout.exercises.map((exercise, index) => {
+          const workoutItemKey = exercise.workoutItemId ?? `${exercise.id}-${index + 1}`;
+          const isCompleted = completed.includes(workoutItemKey);
+
+          return (
+            <div key={workoutItemKey} className={isCompleted ? 'opacity-60' : ''}>
+              <ExerciseCard exercise={exercise} index={index + 1} />
+              <Button
+                full
+                variant={isCompleted ? 'secondary' : 'primary'}
+                className="mt-3"
+                onClick={() => toggle(workoutItemKey)}
+              >
+                {isCompleted ? 'Completed ✓' : 'Mark complete'}
+              </Button>
+            </div>
+          );
+        })}
       </div>
       <Button full disabled={doneCount !== workout.exercises.length} onClick={onFinish}>Finish and give feedback</Button>
     </div>

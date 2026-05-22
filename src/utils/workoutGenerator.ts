@@ -22,12 +22,17 @@ export function generateWorkout(equipment: Equipment[], level: Level, progressio
     exercises.push(bonus);
   }
 
+  const normalizedExercises = exercises.map((exercise, index) => ({
+    ...exercise,
+    workoutItemId: `${exercise.id}-${exercise.category.toLowerCase()}-${index + 1}` ,
+  }));
+
   return {
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     level,
     equipment,
-    exercises,
+    exercises: normalizedExercises,
   };
 }
 
